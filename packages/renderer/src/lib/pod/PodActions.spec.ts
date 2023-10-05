@@ -24,13 +24,16 @@ import type { PodInfoUI } from './PodInfoUI';
 
 const pod: PodInfoUI = {
   id: 'pod',
+  containers: [{}],
 } as PodInfoUI;
 
 const errorCallback = vi.fn();
+const listContainersMock = vi.fn();
 const getContributedMenusMock = vi.fn();
 
 beforeEach(() => {
   (window as any).kubernetesDeletePod = vi.fn();
+  (window as any).listContainers = listContainersMock;
   vi.resetAllMocks();
   vi.clearAllMocks();
 
@@ -39,6 +42,8 @@ beforeEach(() => {
 });
 
 test('Expect no error deleting pod', async () => {
+  listContainersMock.mockResolvedValue([]);
+
   render(PodActions, { pod, errorCallback });
 
   // click on delete button

@@ -1,5 +1,13 @@
 <script lang="ts">
-import { faFileCode, faPlay, faRocket, faStop, faArrowsRotate, faTrash } from '@fortawesome/free-solid-svg-icons';
+import {
+  faFileCode,
+  faPlay,
+  faRocket,
+  faStop,
+  faArrowsRotate,
+  faTrash,
+  faExternalLinkSquareAlt,
+} from '@fortawesome/free-solid-svg-icons';
 import type { PodInfoUI } from './PodInfoUI';
 import { router } from 'tinro';
 import ListItemButtonIcon from '../ui/ListItemButtonIcon.svelte';
@@ -9,6 +17,7 @@ import type { Menu } from '../../../../main/src/plugin/menu-registry';
 import ContributionActions from '/@/lib/actions/ContributionActions.svelte';
 import { onMount } from 'svelte';
 import { MenuContext } from '../../../../main/src/plugin/menu-registry';
+import { ContainerUtils } from '../container/container-utils';
 
 export let pod: PodInfoUI;
 export let dropdownMenu = false;
@@ -20,6 +29,19 @@ export let errorCallback: (erroMessage: string) => void = () => {};
 let contributions: Menu[] = [];
 onMount(async () => {
   contributions = await window.getContributedMenus(MenuContext.DASHBOARD_POD);
+});
+
+let openingUrls: string[];
+
+onMount(async () => {
+  const containerUtils = new ContainerUtils();
+
+  const containerIds = pod.containers.map(podContainer => podContainer.Id);
+  const podContainers = (await window.listContainers()).filter(container =>
+    containerIds.findIndex(containerInfo => containerInfo === container.Id),
+  );
+
+  openingUrls = podContainers.map(container => containerUtils.getOpeningUrl(container));
 });
 
 async function startPod(podInfoUI: PodInfoUI) {
@@ -128,6 +150,18 @@ if (dropdownMenu) {
       menu="{dropdownMenu}"
       detailed="{detailed}"
       icon="{faRocket}" />
+    {#if openingUrls !== undefined}
+      {#each openingUrls as url}
+        <ListItemButtonIcon
+          title="Open Browser"
+          onClick="{() => window.openExternal(url)}"
+          menu="{dropdownMenu}"
+          enabled="{pod.status === 'RUNNING'}"
+          hidden="{dropdownMenu}"
+          detailed="{detailed}"
+          icon="{faExternalLinkSquareAlt}" />
+      {/each}
+    {/if}
     <ListItemButtonIcon
       title="Restart Pod"
       onClick="{() => restartPod(pod)}"
